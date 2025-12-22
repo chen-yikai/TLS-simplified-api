@@ -25,11 +25,13 @@ for (let index = 1; index <= 20; index++) {
     ).then(async (res) => await res.json());
 
     const record = recordDetail[0];
+    if (!record) continue;
 
     await db
       .insert(recordsTable)
       .values({
         id: record.id,
+        name: record.name,
         description: record.description,
         clip: `${host}/${record.clip}.mp4`,
         stroke: record.stroke,
@@ -63,7 +65,20 @@ for (let index = 1; index <= 20; index++) {
       })
       .onConflictDoNothing();
 
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    if (record.polysemy > 0) {
+      const polysemy = await fetch(`${host}/api/group?id=${record.id}&lang=zh`)
+        .then((res) => res.json())
+        .then((data) => data.Record);
+      for (const item of polysemy as { polysemy: number; name: string }[]) {
+        await db
+          .insert(wordsTable)
+          .values({
+            word: item.name,
+            recordId: record.id,
+          })
+          .onConflictDoNothing();
+      }
+    }
   }
 }
 
