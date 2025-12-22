@@ -1,4 +1,3 @@
-import { uniqueIndex } from "drizzle-orm/gel-core";
 import * as t from "drizzle-orm/pg-core";
 
 export const recordsTable = t.pgTable("records", {

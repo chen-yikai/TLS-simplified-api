@@ -3,8 +3,10 @@ import { db } from "drizzle.config";
 import Elysia, { t } from "elysia";
 import { recordsTable, sentencesTable, wordsTable } from "./db/schema";
 import { eq } from "drizzle-orm";
+import cors from "@elysiajs/cors";
 
 new Elysia()
+  .use(cors())
   .use(
     swagger({
       path: "/docs",
@@ -33,12 +35,13 @@ new Elysia()
       if (!record) return status(404, { message: "Record not found" });
       return {
         id: record.id,
-        name: word[0].word,
+        name: record.name,
         description: record.description,
         stroke: record.stroke,
         polysemy: record.polysemy,
         clip: record.clip,
         sentences: [...sentences.map((sentence) => sentence)],
+        polysemyWords: [...word.map((w) => w.word)],
       };
     },
     {
@@ -57,18 +60,19 @@ new Elysia()
       },
     },
   )
-  .post(
+  .get(
     "/search",
     async ({ query }) => {
       const words = await db.query.wordsTable.findMany({
         where: (words, { ilike }) => ilike(words.word, `%${query.q ?? ""}%`),
       });
       return {
-        results: words.map((word) => ({
-          id: word.recordId,
+        results: words.map((word, index) => ({
+          id: index,
+          recordId: word.recordId,
           name: word.word,
         })),
-        totalResults: words.length,
+        total: words.length,
       };
     },
     {
