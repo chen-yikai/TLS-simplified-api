@@ -86,7 +86,7 @@ new Elysia()
           sql`1 - (${cosineDistance(wordsTable.embedding, queryVector)}) > 0.5`,
         )
         .orderBy((t) => desc(t.similarity))
-        .limit(5);
+        .limit(query.limit ?? 5);
 
       return {
         results: words.map((word, index) => ({
@@ -101,6 +101,7 @@ new Elysia()
       query: t.Object(
         {
           q: t.Union([t.String(), t.Array(t.String())]),
+          limit: t.Optional(t.Numeric()),
         },
         {
           error: () => ({ message: "Invalid query parameters" }),
