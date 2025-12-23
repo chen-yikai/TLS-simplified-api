@@ -1,2 +1,0 @@
-ALTER TABLE "sentences" ADD CONSTRAINT "sentences_recordId_gloss_translation_unique" UNIQUE("recordId","gloss","translation");--> statement-breakpoint
-ALTER TABLE "words" ADD CONSTRAINT "words_recordId_word_unique" UNIQUE("recordId","word");

@@ -1,1 +1,0 @@
-ALTER TABLE "words" ALTER COLUMN "embedding" SET DATA TYPE vector(384);
