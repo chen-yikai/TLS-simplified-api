@@ -1,18 +1,19 @@
 import swagger from "@elysiajs/swagger";
+import { env, pipeline } from "@xenova/transformers";
 import { db } from "drizzle.config";
 import Elysia, { t } from "elysia";
 import { recordsTable, sentencesTable, wordsTable } from "./db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql, cosineDistance, desc } from "drizzle-orm";
 import cors from "@elysiajs/cors";
+
+env.cacheDir = "./model_cache";
+const extractor = await pipeline(
+  "feature-extraction",
+  "Xenova/paraphrase-multilingual-MiniLM-L12-v2",
+);
 
 new Elysia()
   .use(cors())
-  .onError(({ code, set }) => {
-    if (code === "NOT_FOUND") {
-      set.status == 404;
-      return null;
-    }
-  })
   .use(
     swagger({
       path: "/docs",
@@ -69,9 +70,24 @@ new Elysia()
   .get(
     "/search",
     async ({ query }) => {
-      const words = await db.query.wordsTable.findMany({
-        where: (words, { ilike }) => ilike(words.word, `%${query.q ?? ""}%`),
+      const output = await extractor(query.q, {
+        pooling: "mean",
+        normalize: true,
       });
+      const queryVector = Array.from(output.data);
+      const words = await db
+        .select({
+          word: wordsTable.word,
+          recordId: wordsTable.recordId,
+          similarity: sql<number>`1 - (${cosineDistance(wordsTable.embedding, queryVector)})`,
+        })
+        .from(wordsTable)
+        .where(
+          sql`1 - (${cosineDistance(wordsTable.embedding, queryVector)}) > 0.5`,
+        )
+        .orderBy((t) => desc(t.similarity))
+        .limit(5);
+
       return {
         results: words.map((word, index) => ({
           id: index,
@@ -84,7 +100,7 @@ new Elysia()
     {
       query: t.Object(
         {
-          q: t.Optional(t.String()),
+          q: t.Union([t.String(), t.Array(t.String())]),
         },
         {
           error: () => ({ message: "Invalid query parameters" }),
