@@ -15,8 +15,14 @@ export const wordsTable = t.pgTable(
     id: t.integer().primaryKey().generatedByDefaultAsIdentity(),
     word: t.text().notNull(),
     recordId: t.integer().references(() => recordsTable.id),
+    embedding: t.vector("embedding", { dimensions: 384 }),
   },
-  (table) => [t.unique("unique_word_recordId").on(table.recordId, table.word)],
+  (table) => [
+    t.unique("unique_word_recordId").on(table.recordId, table.word),
+    t
+      .index("embeddingIndex")
+      .using("hnsw", table.embedding.op("vector_cosine_ops")),
+  ],
 );
 
 export const sentencesTable = t.pgTable(
