@@ -7,6 +7,12 @@ import cors from "@elysiajs/cors";
 
 new Elysia()
   .use(cors())
+  .onError(({ code, set }) => {
+    if (code === "NOT_FOUND") {
+      set.status == 404;
+      return null;
+    }
+  })
   .use(
     swagger({
       path: "/docs",
