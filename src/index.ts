@@ -5,9 +5,12 @@ import Elysia, { t } from "elysia";
 import { recordsTable, sentencesTable, wordsTable } from "./db/schema";
 import { eq, sql, cosineDistance, desc } from "drizzle-orm";
 import cors from "@elysiajs/cors";
+import { cut } from "jieba-wasm";
 
+env.allowRemoteModels = true;
 env.cacheDir = "./model_cache";
 const extractor = await pipeline("feature-extraction", "Xenova/bge-m3");
+const exculdeWords = new Set<string>(["了", "，", "！", "？", "。", "喔"]);
 
 new Elysia()
   .use(cors())
@@ -20,6 +23,10 @@ new Elysia()
           description: "https://twtsl.ccu.edu.tw",
           version: "1.0",
         },
+        servers: [
+          { url: "/api", description: "front-end proxy connection" },
+          { url: "/", description: "direct server connection" },
+        ],
       },
       provider: "swagger-ui",
     }),
@@ -60,7 +67,7 @@ new Elysia()
       detail: {
         description: "Get detailed information about a specific word by ID.",
         summary: "Get word details by id",
-        tags: ["dict"],
+        tags: ["dictionary"],
       },
     },
   )
@@ -108,12 +115,57 @@ new Elysia()
         description:
           "Search words in the words dataset, leave 'q' empty to get all words.",
         summary: "Search words or get all words",
-        tags: ["dict"],
+        tags: ["dictionary"],
       },
     },
   )
-  .get("/", () => "台灣手語辭典 API")
-  .get("/translate", () => ({}))
+  .get(
+    "/translate",
+    async ({ query }) => {
+      let cutText = cut(query.text);
+      cutText = cutText.filter((word) => !exculdeWords.has(word));
+      const results: TranslateResult[] = [];
+      for (const word of cutText) {
+        const output = await extractor(word, {
+          pooling: "mean",
+          normalize: true,
+        });
+        const queryVector = Array.from(output.data);
+        const result = await db.query.wordsTable.findFirst({
+          extras: {
+            similarity:
+              sql<number>`1 - (${cosineDistance(wordsTable.embedding, queryVector)})`.as(
+                "similarity",
+              ),
+          },
+          where: (table, { sql }) =>
+            sql`1 - (${cosineDistance(table.embedding, queryVector)}) > 0.5`,
+          orderBy: () => sql`similarity DESC`,
+        });
+        if (result?.recordId) {
+          results.push({
+            recordId: result.recordId,
+            result: result.word,
+            source: word,
+          });
+        }
+      }
+      return {
+        query: query.text,
+        results,
+        total: results.length,
+      };
+    },
+    {
+      query: t.Object({
+        text: t.String(),
+      }),
+      detail: {
+        summary: "Translate text with existing words in dataset",
+        tags: ["feature"],
+      },
+    },
+  )
   .listen(process.env.PORT ?? 3000);
 
 console.log(`Server is fireup on port ${process.env.PORT ?? 3000}`);
