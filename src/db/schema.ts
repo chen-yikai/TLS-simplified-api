@@ -15,7 +15,7 @@ export const wordsTable = t.pgTable(
     id: t.integer().primaryKey().generatedByDefaultAsIdentity(),
     word: t.text().notNull(),
     recordId: t.integer().references(() => recordsTable.id),
-    embedding: t.vector("embedding", { dimensions: 384 }),
+    embedding: t.vector("embedding", { dimensions: 1024 }),
   },
   (table) => [
     t.unique("unique_word_recordId").on(table.recordId, table.word),

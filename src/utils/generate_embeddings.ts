@@ -4,16 +4,15 @@ import * as t from "drizzle-orm";
 import { db } from "drizzle.config";
 
 env.cacheDir = "./model_cache";
-const extractor = await pipeline(
-  "feature-extraction",
-  "Xenova/paraphrase-multilingual-MiniLM-L12-v2",
-);
+const extractor = await pipeline("feature-extraction", "Xenova/bge-m3");
 
 console.log("words table will be processed for embedding generation...");
 
 const words = await db.select().from(wordsTable);
+
 for (const item of words) {
-  const output = await extractor(item.word, {
+  const wordWithoutTag = item.word.split("_")[0];
+  const output = await extractor(wordWithoutTag, {
     pooling: "mean",
     normalize: true,
   });

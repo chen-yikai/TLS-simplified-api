@@ -7,10 +7,7 @@ import { eq, sql, cosineDistance, desc } from "drizzle-orm";
 import cors from "@elysiajs/cors";
 
 env.cacheDir = "./model_cache";
-const extractor = await pipeline(
-  "feature-extraction",
-  "Xenova/paraphrase-multilingual-MiniLM-L12-v2",
-);
+const extractor = await pipeline("feature-extraction", "Xenova/bge-m3");
 
 new Elysia()
   .use(cors())
@@ -115,6 +112,8 @@ new Elysia()
       },
     },
   )
+  .get("/", () => "台灣手語辭典 API")
+  .get("/translate", () => ({}))
   .listen(process.env.PORT ?? 3000);
 
 console.log(`Server is fireup on port ${process.env.PORT ?? 3000}`);
