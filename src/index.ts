@@ -119,10 +119,10 @@ new Elysia()
       },
     },
   )
-  .get(
+  .post(
     "/translate",
     async ({ query }) => {
-      let cutText = cut(query.text);
+      let cutText = cut(query.source);
       cutText = cutText.filter((word) => !exculdeWords.has(word));
       const results: TranslateResult[] = [];
       for (const word of cutText) {
@@ -151,14 +151,14 @@ new Elysia()
         }
       }
       return {
-        query: query.text,
+        query: query.source,
         results,
         total: results.length,
       };
     },
     {
       query: t.Object({
-        text: t.String(),
+        source: t.String(),
       }),
       detail: {
         summary: "Translate text with existing words in dataset",
