@@ -13,7 +13,7 @@ console.log("words table will be processed for embedding generation...");
 const words = await db.select().from(wordsTable);
 
 for (const item of words) {
-  const wordWithoutTag = item.word;
+  const wordWithoutTag = item.word.split("_")[0];
   const output = await extractor(wordWithoutTag, {
     pooling: "mean",
     normalize: true,

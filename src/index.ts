@@ -145,10 +145,17 @@ new Elysia()
           orderBy: () => sql`similarity DESC`,
         });
         if (result?.recordId) {
+          const record = await db.query.recordsTable.findFirst({
+            where: eq(recordsTable.id, result.recordId),
+          });
           results.push({
             recordId: result.recordId,
             result: result.word,
             source: word,
+            sourceInfo: {
+              clip: record?.clip,
+              description: record?.description,
+            },
           });
         }
       }
