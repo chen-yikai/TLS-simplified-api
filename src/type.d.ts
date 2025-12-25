@@ -1,5 +1,6 @@
 type TranslateResult = {
   recordId: number;
-  text: string;
+  result: string;
+  data?: any;
   source: string;
 };

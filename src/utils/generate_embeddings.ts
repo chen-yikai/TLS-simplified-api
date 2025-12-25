@@ -1,5 +1,5 @@
 import { wordsTable } from "@/db/schema";
-import { env, pipeline } from "@xenova/transformers";
+import { env, pipeline } from "@huggingface/transformers";
 import * as t from "drizzle-orm";
 import { db } from "drizzle.config";
 

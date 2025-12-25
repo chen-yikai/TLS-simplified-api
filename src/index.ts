@@ -1,5 +1,5 @@
 import swagger from "@elysiajs/swagger";
-import { env, pipeline } from "@xenova/transformers";
+import { pipeline, env } from "@huggingface/transformers";
 import { db } from "drizzle.config";
 import Elysia, { t } from "elysia";
 import { recordsTable, sentencesTable, wordsTable } from "./db/schema";
@@ -7,9 +7,19 @@ import { eq, sql, cosineDistance, desc } from "drizzle-orm";
 import cors from "@elysiajs/cors";
 import { cut } from "jieba-wasm";
 
-env.allowRemoteModels = true;
 env.cacheDir = "./model_cache";
-const extractor = await pipeline("feature-extraction", "Xenova/bge-m3");
+const extractor = await pipeline("feature-extraction", "Xenova/bge-m3", {
+  dtype: "q4",
+});
+const generator = await pipeline(
+  "text-generation",
+  "Mozilla/Qwen2.5-0.5B-Instruct",
+  {
+    dtype: "q4",
+  },
+);
+console.log("Model loaded successfully");
+
 const exculdeWords = new Set<string>(["了", "，", "！", "？", "。", "喔"]);
 
 new Elysia()
@@ -169,3 +179,6 @@ new Elysia()
   .listen(process.env.PORT ?? 3000);
 
 console.log(`Server is fireup on port ${process.env.PORT ?? 3000}`);
+function edenFetch<T>(arg0: string) {
+  throw new Error("Function not implemented.");
+}
