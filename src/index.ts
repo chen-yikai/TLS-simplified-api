@@ -188,8 +188,8 @@ async function TranslateResult(query: any): Promise<string[]> {
     body: JSON.stringify({
       model: "qwen2.5:3b",
       system:
-        "Translate to Taiwan Sign Language Array. Order: Object-Subject-Verb. Rule: Split verbs (e.g., '喜歡吃' -> '喜歡', '吃'). No explanation.",
-      prompt: `Input: "爸爸很愛媽媽" -> ["媽媽", "爸爸", "愛"]\nInput: "我喜歡吃蘋果" -> ["蘋果", "我", "喜歡", "吃"]\nInput: "她要去台北" -> ["台北", "她", "去"]\nInput: "${query}" -> `,
+        "你是台灣手語專家。請嚴格遵守語序：[主詞] > [動詞] > [受詞或形容詞] 。\n規則：1.不可遺漏任何詞彙。 2.動詞與否定詞必須拆開。 3.只輸出純 JSON 陣列。 4.避免讓結果包含非中文字元。 5.適當斷句。",
+      prompt: `輸入："我喜歡吃蘋果" -> ["蘋果", "我", "喜歡", "吃"]\n輸入："昨天我在學校沒看見老師" -> ["昨天", "學校", "老師", "我", "看見", "沒"]\n輸入："${query}" -> `,
       stream: false,
     }),
   });
